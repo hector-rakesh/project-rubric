@@ -40,18 +40,19 @@ def initialize_rag_system(chroma_dir: str, collection_name: str):
     except Exception as e:
         return None, False, str(e)
 
-def retrieve_documents(collection, query: str, n_results: int = 5, 
-                       mission_filter: Optional[str] = None) -> Optional[Dict]:
-    """Retrieve documents with metadata filtering"""
-    where_filter = None
-    if mission_filter and mission_filter != "All Missions":
-        where_filter = {"mission": mission_filter}
+def retrieve_documents(collection, query, mission_filter=None, n_results=3):
+    # Standardizing mission names to match stored metadata (Apollo 11, Apollo 13, Challenger)
+    # ChromaDB 'where' filter requires a dictionary: {"metadata_field": "value"}
+    where_clause = None
+    if mission_filter and mission_filter != "All":
+        where_clause = {"mission": mission_filter}
 
-    return collection.query(
+    results = collection.query(
         query_texts=[query],
         n_results=n_results,
-        where=where_filter
+        where=where_clause
     )
+    return results
 
 def format_context(documents: List[str], metadatas: List[Dict]) -> str:
     """Improved context: Removes duplicates and orders by relevance"""

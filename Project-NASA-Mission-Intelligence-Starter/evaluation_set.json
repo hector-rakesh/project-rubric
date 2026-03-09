@@ -1,22 +1,27 @@
 [
     {
-        "question": "What are the primary scientific objectives of the Mars 2020 Perseverance rover?",
-        "ground_truth": "Seeking signs of ancient life and collecting samples of rock and regolith for possible return to Earth."
+        "mission": "Apollo 11",
+        "question": "Who were the three astronauts on the Apollo 11 mission?",
+        "ground_truth": "Neil Armstrong, Buzz Aldrin, and Michael Collins."
     },
     {
-        "question": "How long was the total mission duration of Apollo 11?",
-        "ground_truth": "The mission lasted 8 days, 3 hours, 18 minutes, and 35 seconds."
+        "mission": "Apollo 13",
+        "question": "What caused the mission to abandon the lunar landing and return to Earth?",
+        "ground_truth": "An oxygen tank explosion in the Service Module caused a loss of electrical power and water."
     },
     {
-        "question": "What is the size of the primary mirror on the James Webb Space Telescope?",
-        "ground_truth": "The primary mirror is 6.5 meters (21.3 feet) across."
+        "mission": "Apollo 13",
+        "question": "What were the call signs for the Apollo 13 Command and Lunar Modules?",
+        "ground_truth": "The Command Module was named Odyssey and the Lunar Module was named Aquarius."
     },
     {
-        "question": "Which Voyager spacecraft was the first to enter interstellar space?",
-        "ground_truth": "Voyager 1 entered interstellar space on August 25, 2012."
+        "mission": "Challenger",
+        "question": "What was the primary cause of the Challenger disaster according to the investigation?",
+        "ground_truth": "The failure of the O-ring seals in the right Solid Rocket Booster due to cold weather."
     },
     {
-        "question": "Where is the planned landing site for the Artemis III mission?",
-        "ground_truth": "The lunar South Pole region."
+        "mission": "Challenger",
+        "question": "How many crew members were lost in the Challenger STS-51-L mission?",
+        "ground_truth": "All seven crew members were lost."
     }
 ]

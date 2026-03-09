@@ -18,44 +18,59 @@ except ImportError:
     RAGAS_AVAILABLE = False
 
 def evaluate_response_quality(question: str, answer: str, contexts: List[str]) -> Dict[str, float]:
-    """Evaluate response quality using RAGAS metrics"""
+    """Evaluate response quality using RAGAS metrics with strengthened error handling"""
+    
+    # 1. FIX: Strengthened input validation (The "Guard Clause")
+    # Returns clear structured errors instead of failing mid-execution
     if not RAGAS_AVAILABLE:
         return {"error": "RAGAS not available"}
     
-    # 1. Create evaluator LLM with model gpt-3.5-turbo
-    evaluator_llm = LangchainLLMWrapper(ChatOpenAI(model="gpt-3.5-turbo"))
-    
-    # 2. Create evaluator_embeddings with model text-embedding-3-small
-    evaluator_embeddings = LangchainEmbeddingsWrapper(OpenAIEmbeddings(model="text-embedding-3-small"))
-    
-    # 3. Define an instance for each metric to evaluate
-    # Note: NonLLMContextPrecisionWithReference usually requires a reference answer; 
-    # if you don't have one, stick to Faithfulness and Relevancy.
-    metrics = [
-        Faithfulness(llm=evaluator_llm),
-        ResponseRelevancy(llm=evaluator_llm, embeddings=evaluator_embeddings),
-        BleuScore(),
-        RougeScore()
-    ]
-    
-    # 4. Create a SingleTurnSample for the individual evaluation
-    sample = SingleTurnSample(
-        user_input=question,
-        response=answer,
-        retrieved_contexts=contexts
-    )
-    
-    # 5. Evaluate the response using the metrics
+    if not answer or not answer.strip():
+        return {"faithfulness": 0.0, "answer_relevancy": 0.0, "error": "Empty assistant response"}
+        
+    if not contexts or len(contexts) == 0:
+        return {"faithfulness": 0.0, "answer_relevancy": 0.0, "error": "No context retrieved"}
+
     try:
-        # Wrap sample in a dataset as evaluate() expects a collection
+        # 2. Setup Evaluators
+        evaluator_llm = LangchainLLMWrapper(ChatOpenAI(model="gpt-3.5-turbo"))
+        evaluator_embeddings = LangchainEmbeddingsWrapper(OpenAIEmbeddings(model="text-embedding-3-small"))
+        
+        # 3. Define Metrics
+        metrics = [
+            Faithfulness(llm=evaluator_llm),
+            ResponseRelevancy(llm=evaluator_llm, embeddings=evaluator_embeddings),
+            BleuScore(),
+            RougeScore()
+        ]
+        
+        # 4. FIX: Align SingleTurnSample fields
+        # Note: In latest Ragas, the field is often 'retrieval_context' 
+        # but check your specific version. Usually 'retrieved_contexts' or 'contexts'.
+        sample = SingleTurnSample(
+            user_input=question,
+            response=answer,
+            retrieved_contexts=contexts  
+        )
+        
+        # 5. Execute Evaluation
         dataset = EvaluationDataset(samples=[sample])
         results = evaluate(
             dataset=dataset,
             metrics=metrics
         )
         
-        # 6. Return the evaluation results as a dictionary
-        return results.to_pandas().iloc[0].to_dict()
+        # 6. Return Structured Output
+        # We convert to dict and remove any internal Ragas metadata for a clean UI/CSV output
+        eval_dict = results.to_pandas().iloc[0].to_dict()
+        
+        # Clean up the dict to ensure only metrics and errors are returned
+        return {k: v for k, v in eval_dict.items() if not k.startswith('_')}
         
     except Exception as e:
-        return {"error": str(e)}
+        # 7. FIX: Ensure malformed inputs during Ragas run return structured data
+        return {
+            "faithfulness": 0.0, 
+            "answer_relevancy": 0.0, 
+            "error": f"Evaluation failed: {str(e)}"
+        }

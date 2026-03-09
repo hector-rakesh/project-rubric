@@ -42,10 +42,12 @@ def run_batch_evaluation(dataset_path="evaluation_set.json", output_path="ragas_
         
         # Record results
         results.append({
+            "Mission": item.get("mission", "Unknown"),
             "Question": question,
             "Answer": answer,
             "Faithfulness": scores.get("faithfulness", 0),
-            "Relevancy": scores.get("answer_relevancy", 0)
+            "Relevancy": scores.get("answer_relevancy", 0),
+            "Context_Precision": scores.get("context_precision", 0)
         })
 
     # 3. Save and Report
