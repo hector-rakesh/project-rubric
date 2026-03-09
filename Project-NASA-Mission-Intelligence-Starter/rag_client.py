@@ -3,6 +3,10 @@ from chromadb.config import Settings
 from typing import Dict, List, Optional
 from pathlib import Path
 
+from openai import OpenAI
+
+_client = OpenAI()
+
 def discover_chroma_backends() -> Dict[str, Dict]:
     """Discover available ChromaDB backends and format for Streamlit selection"""
     backends = {}
@@ -40,15 +44,23 @@ def initialize_rag_system(chroma_dir: str, collection_name: str):
     except Exception as e:
         return None, False, str(e)
 
+def get_embedding(text, model="text-embedding-3-small"):
+    """Generate an embedding vector for a given string."""
+    text = text.replace("\n", " ")
+    return _client.embeddings.create(input=[text], model=model).data[0].embedding
+
 def retrieve_documents(collection, query, mission_filter=None, n_results=3):
     # Standardizing mission names to match stored metadata (Apollo 11, Apollo 13, Challenger)
     # ChromaDB 'where' filter requires a dictionary: {"metadata_field": "value"}
+    
+    question_embedding = get_embedding(query)
+
     where_clause = None
     if mission_filter and mission_filter != "All":
         where_clause = {"mission": mission_filter}
 
     results = collection.query(
-        query_texts=[query],
+        query_embeddings=[question_embedding],
         n_results=n_results,
         where=where_clause
     )
