@@ -3,105 +3,77 @@ from chromadb.config import Settings
 from typing import Dict, List, Optional
 from pathlib import Path
 
-def discover_chroma_backends() -> Dict[str, Dict[str, str]]:
-    """Discover available ChromaDB backends in the project directory"""
+def discover_chroma_backends() -> Dict[str, Dict]:
+    """Discover available ChromaDB backends and format for Streamlit selection"""
     backends = {}
     current_dir = Path(".")
     
-    # 1. Create list of directories that match specific criteria
-    # We look for directories that contain a 'chroma.sqlite3' file
+    # Look for directories containing Chroma data
     chroma_dirs = [d for d in current_dir.iterdir() if d.is_dir() and (d / "chroma.sqlite3").exists()]
 
-    # 2. Loop through each discovered directory
     for db_dir in chroma_dirs:
         try:
-            # 3. Initialize database client
             client = chromadb.PersistentClient(path=str(db_dir))
-            
-            # 4. Retrieve list of available collections
             collections = client.list_collections()
             
-            # 5. Loop through each collection found
             for col in collections:
-                # Create unique identifier: "directory/collection"
+                # Key used for selection logic
                 key = f"{db_dir.name}/{col.name}"
+                count = col.count()
                 
-                # Get document count with fallback
-                try:
-                    count = col.count()
-                except Exception:
-                    count = "Unknown"
-
-                # 6. Build information dictionary
                 backends[key] = {
-                    "path": str(db_dir),
-                    "collection": col.name,
+                    "directory": str(db_dir),
+                    "collection_name": col.name,
                     "display_name": f"{db_dir.name} > {col.name} ({count} docs)",
                     "count": count
                 }
-        
         except Exception as e:
-            # 7. Handle connection errors gracefully
-            error_msg = str(e)[:30] + "..." if len(str(e)) > 30 else str(e)
-            backends[str(db_dir)] = {
-                "path": str(db_dir),
-                "collection": "N/A",
-                "display_name": f"⚠️ {db_dir.name} (Error: {error_msg})",
-                "count": 0
-            }
-
+            continue
     return backends
 
 def initialize_rag_system(chroma_dir: str, collection_name: str):
-    """Initialize the RAG system with specified backend"""
-    client = chromadb.PersistentClient(path=chroma_dir)
-    return client.get_collection(name=collection_name)
+    """Initialize the ChromaDB collection"""
+    try:
+        client = chromadb.PersistentClient(path=chroma_dir)
+        collection = client.get_collection(name=collection_name)
+        return collection, True, ""
+    except Exception as e:
+        return None, False, str(e)
 
-def retrieve_documents(collection, query: str, n_results: int = 3, 
+def retrieve_documents(collection, query: str, n_results: int = 5, 
                        mission_filter: Optional[str] = None) -> Optional[Dict]:
-    """Retrieve relevant documents from ChromaDB with optional filtering"""
-    
-    # 1. Initialize filter variable
+    """Retrieve documents with metadata filtering"""
     where_filter = None
-
-    # 2. Check for filter parameters (ignoring "all" or empty values)
-    if mission_filter and mission_filter.lower() not in ["all", "none", "any"]:
+    if mission_filter and mission_filter != "All Missions":
         where_filter = {"mission": mission_filter}
 
-    # 3. Execute database query
-    results = collection.query(
+    return collection.query(
         query_texts=[query],
         n_results=n_results,
-        where=where_filter  # Apply conditional filter
+        where=where_filter
     )
 
-    return results
-
 def format_context(documents: List[str], metadatas: List[Dict]) -> str:
-    """Format retrieved documents into context"""
+    """Improved context: Removes duplicates and orders by relevance"""
     if not documents:
-        return ""
+        return "No relevant context found."
     
-    # 1. Initialize context list
-    context_parts = ["--- START OF SEARCH CONTEXT ---"]
+    seen_content = set()
+    context_parts = ["--- START OF NASA MISSION CONTEXT ---"]
 
-    # 2. Loop through paired documents and metadata
     for i, (doc, meta) in enumerate(zip(documents, metadatas), 1):
-        # Extract and clean Mission info
-        mission = meta.get("mission", "Unknown Mission").replace("_", " ").title()
+        # Deduplication based on a snippet of the text
+        content_hash = doc[:100].strip()
+        if content_hash in seen_content:
+            continue
+        seen_content.add(content_hash)
         
-        # Extract Source and Category
-        source = meta.get("source", "Unknown Source")
-        category = meta.get("category", "General").replace("_", " ").title()
+        mission = meta.get("mission", "NASA General").replace("_", " ").title()
+        source = meta.get("source", "Official Record")
         
-        # 3. Create formatted source header
-        header = f"\n[Source {i} | Mission: {mission} | Category: {category} | File: {source}]"
+        header = f"\n[Document {len(seen_content)} | Mission: {mission} | Source: {source}]"
         context_parts.append(header)
-        
-        # 4. Truncate document if it's excessively long (e.g., 2000 chars)
-        content = doc if len(doc) < 2000 else doc[:2000] + "... [Content Truncated]"
-        context_parts.append(content)
+        context_parts.append(doc.strip())
 
-    context_parts.append("\n--- END OF SEARCH CONTEXT ---")
-    
+    context_parts.append("\n--- END OF CONTEXT ---")
     return "\n".join(context_parts)

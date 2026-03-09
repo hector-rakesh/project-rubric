@@ -298,6 +298,23 @@ Once you complete the basic implementation, consider these enhancements:
 6. **Monitoring**: Add comprehensive logging and monitoring
 7. **Security**: Implement authentication and rate limiting
 
+## Automated Batch Evaluation
+For rigorous pipeline testing, use the batch workflow to process multiple questions and generate a performance report.
+1. Configure the Dataset
+Edit evaluation_set.json:
+```json
+[
+  {
+    "question": "What is the primary mirror diameter of the James Webb Space Telescope?",
+    "ground_truth": "6.5 meters (21.3 feet)."
+  }
+]
+```
+2. Run the Batch Script
+```python
+python run_batch_eval.py
+```
+
 ## 📚 Learning Resources
 
 - [ChromaDB Documentation](https://docs.trychroma.com/)

@@ -135,14 +135,16 @@ def main():
         backend_options = {k: v["display_name"] for k, v in available_backends.items()}
         
         selected_backend_key = st.selectbox(
-            "Select Document Collection",
+            "Collection",
             options=list(backend_options.keys()),
-            format_func=lambda x: backend_options[x],
-            help="Choose which document collection to use for retrieval"
+            format_func=lambda x: backend_options[x]["display_name"]
         )
         
         selected_backend = available_backends[selected_backend_key]
         
+        mission_list = ["All Missions", "Apollo", "Artemis", "Mars_2020", "Voyager", "JWST"]
+        selected_mission = st.selectbox("Filter by Mission", options=mission_list)
+
         # API Key input
         st.subheader("🔑 OpenAI Settings")
         openai_key = st.text_input(
@@ -214,7 +216,8 @@ def main():
                 docs_result = retrieve_documents(
                     collection, 
                     prompt, 
-                    n_docs
+                    n_docs,
+                    selected_mission
                 )
                 
                 # Format context

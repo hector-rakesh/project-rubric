@@ -1,0 +1,22 @@
+[
+    {
+        "question": "What are the primary scientific objectives of the Mars 2020 Perseverance rover?",
+        "ground_truth": "Seeking signs of ancient life and collecting samples of rock and regolith for possible return to Earth."
+    },
+    {
+        "question": "How long was the total mission duration of Apollo 11?",
+        "ground_truth": "The mission lasted 8 days, 3 hours, 18 minutes, and 35 seconds."
+    },
+    {
+        "question": "What is the size of the primary mirror on the James Webb Space Telescope?",
+        "ground_truth": "The primary mirror is 6.5 meters (21.3 feet) across."
+    },
+    {
+        "question": "Which Voyager spacecraft was the first to enter interstellar space?",
+        "ground_truth": "Voyager 1 entered interstellar space on August 25, 2012."
+    },
+    {
+        "question": "Where is the planned landing site for the Artemis III mission?",
+        "ground_truth": "The lunar South Pole region."
+    }
+]

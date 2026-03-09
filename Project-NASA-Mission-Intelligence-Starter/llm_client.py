@@ -9,9 +9,18 @@ def generate_response(openai_key: str, user_message: str, context: str,
     client = OpenAI(api_key=openai_key)
 
     # 2. Define system prompt and set context
+    system_prompt = """You are a senior NASA Mission Expert. Your goal is to provide technical, 
+accurate, and concise information based on the provided search context.
+
+RULES:
+1. CITATION: Always cite the Document number (e.g., [Document 1]) when referencing facts.
+2. LIMITS: Only use the provided context. If the answer isn't there, say: 
+   "I'm sorry, my current mission records do not contain specific information to answer that."
+3. TONE: Professional, scientific, and helpful.
+4. If a mission filter was applied, focus strictly on that mission's parameters."""
     # We place the context here so the model knows its constraints/knowledge base
     messages = [
-        {"role": "system", "content": f"You are a helpful assistant. Use this context: {context}"}
+        {"role": "system", "content": system_prompt}
     ]
 
     # 3. Add chat history
@@ -19,14 +28,14 @@ def generate_response(openai_key: str, user_message: str, context: str,
     messages.extend(conversation_history)
 
     # 4. Add the current user message
-    messages.append({"role": "user", "content": user_message})
+    messages.append({"role": "user", "content": f"Context:\n{context}\n\nQuestion: {user_message}"})
 
     # 5. Send request to OpenAI
     try:
         response = client.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=0.7  # Optional: adjusts creativity
+            temperature=0
         )
 
         # 6. Return response text
